@@ -1,15 +1,23 @@
 package generic;
 
-import java.util.ArrayList;
-import java.util.List;
 
 public class Main {
+
     public static void main(String[] args) {
 
+//        Repository<Box<String>> db = new InMemoryRepository<>();
+//        Box<String> b1 = new Box<>();
+//        b1.setValue("Value 01");
+//        db.save(b1);
+//        Box<String> b2 = new Box<>();
+//        b2.setValue("Value 02");
+//        db.save(b2);
+//        System.out.println(db.findById(0));
 
 
-
-
+//        Factory<Box<String>> f = new Factory<>(Box::new);
+//        Box<String> b = f.create();
+//        System.out.println(b);
 
 //        Box<Integer> box = new Box<>();
 //        box.setValue(20);
