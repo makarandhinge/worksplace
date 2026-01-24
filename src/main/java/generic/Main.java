@@ -14,6 +14,20 @@ public class Main {
 //        db.save(b2);
 //        System.out.println(db.findById(0));
 
+//        Storage<String> names = new Storage<>();
+//        names.add("Alice");
+//        names.add("Bob");
+//
+//        String s = names.get(0);
+//        System.out.println(s);
+
+        Pair<String, Integer> p1 = new Pair<>();
+        p1.setFirst("Age");
+        p1.setSecond(25);
+
+        String key = p1.getFirst();
+        Integer value = p1.getSecond();
+        System.out.println(key + " " + value);
 
 //        Factory<Box<String>> f = new Factory<>(Box::new);
 //        Box<String> b = f.create();
