@@ -1,4 +1,4 @@
-package generic.T1;
+package generic.L3;
 
 public interface Identifiable{
     int getId();
