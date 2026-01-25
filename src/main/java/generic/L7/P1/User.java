@@ -1,4 +1,4 @@
-package generic.L7;
+package generic.L7.P1;
 
 public class User {
     private int id;

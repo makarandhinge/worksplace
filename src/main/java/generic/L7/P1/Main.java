@@ -1,4 +1,4 @@
-package generic.L7;
+package generic.L7.P1;
 
 public class Main {
     public static void main(String[] args) {
