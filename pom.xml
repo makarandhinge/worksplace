@@ -1,29 +1,67 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.worksplace</groupId>
-  <artifactId>MiniPro</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <name>MiniPro</name>
-  
-  <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-  </properties>
-  
-  <dependencies>
-  <!-- https://mvnrepository.com/artifact/commons-validator/commons-validator -->
-<dependency>
-    <groupId>commons-validator</groupId>
-    <artifactId>commons-validator</artifactId>
-    <version>1.10.0</version>
-</dependency>
-      <!-- Source: https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.5.10</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.worksplace</groupId>
+	<artifactId>MiniPro</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>MiniPro</name>
+	<description>Where You Encounter Java and Spring in a Better Way</description>
+	<url/>
+	<licenses>
+		<license/>
+	</licenses>
+	<developers>
+		<developer/>
+	</developers>
+	<scm>
+		<connection/>
+		<developerConnection/>
+		<tag/>
+		<url/>
+	</scm>
+	<properties>
+		<java.version>17</java.version>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+    <dependency>
+        <groupId>commons-validator</groupId>
+        <artifactId>commons-validator</artifactId>
+        <version>1.10.0</version>
+    </dependency>
       <dependency>
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-lang3</artifactId>
           <version>3.20.0</version>
           <scope>compile</scope>
       </dependency>
-  </dependencies>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>
