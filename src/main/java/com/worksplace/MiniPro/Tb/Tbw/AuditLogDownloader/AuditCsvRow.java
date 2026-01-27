@@ -1,12 +1,21 @@
 package com.worksplace.MiniPro.Tb.Tbw.AuditLogDownloader;
 
+import com.opencsv.bean.CsvBindByName;
+import com.opencsv.bean.CsvBindByPosition;
+
 public class AuditCsvRow {
 
+    @CsvBindByName(column = "Timestamp")
     long createdTime;
+    @CsvBindByName(column = "Entity Name")
     String entityName;
+    @CsvBindByName(column = "Entity Type")
     String entityType;
+    @CsvBindByName(column = "User")
     String userName;
+    @CsvBindByName(column = "Type")
     String actionType;
+    @CsvBindByName(column = "Status")
     String actionStatus;
 
     public long getCreatedTime() {

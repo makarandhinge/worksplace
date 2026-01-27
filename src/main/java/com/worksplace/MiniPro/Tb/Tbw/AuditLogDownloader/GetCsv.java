@@ -4,15 +4,23 @@ package com.worksplace.MiniPro.Tb.Tbw.AuditLogDownloader;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.opencsv.bean.ColumnPositionMappingStrategy;
+import com.opencsv.bean.HeaderColumnNameMappingStrategy;
+import com.opencsv.bean.StatefulBeanToCsv;
+import com.opencsv.bean.StatefulBeanToCsvBuilder;
+import com.opencsv.exceptions.CsvDataTypeMismatchException;
+import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 
 public class GetCsv {
@@ -22,8 +30,9 @@ public class GetCsv {
     static final String defaultUrl = "http://20.153.138.18:8080";
     static final String defaultUsername = "tenant@thingsboard.org";
     static final String defaultPassword = "tenant@metOSX";
+    static final String path = "/home/hingemakarand/audit.csv";
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException, CsvRequiredFieldEmptyException, CsvDataTypeMismatchException {
         Scanner sc = new Scanner(System.in);
 
         System.out.printf("Enter the url (press enter for default url - %s) : ", defaultUrl);
@@ -46,8 +55,8 @@ public class GetCsv {
         String jwtToken = getToken(username,password,url);
         String json = getAllLogs(jwtToken,url);
         String readableJson = parseJsonToReadable(json);
-//        parseJsonToObject(readableJson);
-        System.out.println(readableJson);
+        List<AuditCsvRow> list = parseJsonToObject(readableJson);
+        writeCsv(list);
 
     }
 
@@ -81,7 +90,7 @@ public class GetCsv {
                 .GET()
                 .header("Authorization", "Bearer " + token)
                 .header("accept", "application/json")
-                .uri(URI.create(url + "/api/audit/logs?pageSize=2&page=0"))
+                .uri(URI.create(url + "/api/audit/logs?pageSize=10&page=0"))
                 .build();
 
         HttpResponse<String> response = http
@@ -101,30 +110,24 @@ public class GetCsv {
                 .writeValueAsString(node);
     }
 
-    static void parseJsonToObject(String json) throws JsonProcessingException {
+    static List<AuditCsvRow> parseJsonToObject(String json) throws JsonProcessingException {
         List<AuditCsvRow> itemList = new ArrayList<>();
         JsonNode root = mapper.readTree(json);
         JsonNode dataArray = root.get("data");
         for(JsonNode item : dataArray){
             AuditCsvRow obj = new AuditCsvRow();
             obj.setCreatedTime(item
-                    .get("actionData")
-                    .get("entity")
                     .get("createdTime")
                     .asLong());
             obj.setUserName(item
                     .get("userName")
                     .asText());
             obj.setEntityType(item
-                    .get("actionData")
-                    .get("entity")
-                    .get("id")
+                    .get("entityId")
                     .get("entityType")
                     .asText());
             obj.setEntityName(item
-                    .get("actionData")
-                    .get("entity")
-                    .get("name")
+                    .get("entityName")
                     .asText());
             obj.setActionType(item
                     .get("actionType")
@@ -135,8 +138,30 @@ public class GetCsv {
 
             itemList.add(obj);
         }
+        return itemList;
+    }
 
-        System.out.println(itemList);
+    static void writeCsv(List<AuditCsvRow> list) throws IOException, CsvRequiredFieldEmptyException, CsvDataTypeMismatchException {
+        Writer writer = Files.newBufferedWriter(Paths.get(path));
 
+        ColumnPositionMappingStrategy<AuditCsvRow> strategy =
+                new ColumnPositionMappingStrategy<>();
+        strategy.setType(AuditCsvRow.class);
+        strategy.setColumnMapping(
+                "createdTime",
+                "entityType",
+                "entityName",
+                "userName",
+                "actionType",
+                "actionStatus"
+        );
+        writer.write("Timestamp,Entity Type,Entity Name,User,Type,Status\n");
+        StatefulBeanToCsv<AuditCsvRow> beanToCsv = new StatefulBeanToCsvBuilder<AuditCsvRow>(writer)
+                .withMappingStrategy(strategy)
+                .withSeparator(',')
+                .build();
+
+        beanToCsv.write(list);
+        writer.close();
     }
 }
