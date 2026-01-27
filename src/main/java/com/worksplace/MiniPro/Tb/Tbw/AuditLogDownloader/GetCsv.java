@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.bean.ColumnPositionMappingStrategy;
-import com.opencsv.bean.HeaderColumnNameMappingStrategy;
 import com.opencsv.bean.StatefulBeanToCsv;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
@@ -19,6 +18,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -116,9 +119,9 @@ public class GetCsv {
         JsonNode dataArray = root.get("data");
         for(JsonNode item : dataArray){
             AuditCsvRow obj = new AuditCsvRow();
-            obj.setCreatedTime(item
+            obj.setCreatedTime(parseEpochToReadable(item
                     .get("createdTime")
-                    .asLong());
+                    .asLong()));
             obj.setUserName(item
                     .get("userName")
                     .asText());
@@ -135,7 +138,6 @@ public class GetCsv {
             obj.setActionStatus(item
                     .get("actionStatus")
                     .asText());
-
             itemList.add(obj);
         }
         return itemList;
@@ -163,5 +165,14 @@ public class GetCsv {
 
         beanToCsv.write(list);
         writer.close();
+    }
+
+    static String parseEpochToReadable(long time){
+        Instant instant = Instant.ofEpochMilli(time);
+        LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+        return dateTime.format(formatter);
+
     }
 }

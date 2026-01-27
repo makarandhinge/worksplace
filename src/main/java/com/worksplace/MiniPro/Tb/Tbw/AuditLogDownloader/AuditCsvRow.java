@@ -6,7 +6,7 @@ import com.opencsv.bean.CsvBindByPosition;
 public class AuditCsvRow {
 
     @CsvBindByName(column = "Timestamp")
-    long createdTime;
+    String createdTime;
     @CsvBindByName(column = "Entity Name")
     String entityName;
     @CsvBindByName(column = "Entity Type")
@@ -18,11 +18,11 @@ public class AuditCsvRow {
     @CsvBindByName(column = "Status")
     String actionStatus;
 
-    public long getCreatedTime() {
+    public String getCreatedTime() {
         return createdTime;
     }
 
-    public void setCreatedTime(long createdTime) {
+    public void setCreatedTime(String createdTime) {
         this.createdTime = createdTime;
     }
 
