@@ -17,7 +17,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -42,7 +44,8 @@ public class GetCsv {
             .format(formatter);
     static final String defaultEndTime = LocalDateTime.now()
             .format(formatter);
-    static final String path = "/home/hingemakarand/audit.csv";
+    static final String basePath = "/home/hingemakarand";
+    static final Path path = createCsvPathForThisRun();
 
 
     public static void main(String[] args) throws IOException, InterruptedException, CsvRequiredFieldEmptyException, CsvDataTypeMismatchException {
@@ -70,11 +73,7 @@ public class GetCsv {
         }
 
         String jwtToken = getToken(username,password,url);
-        String json = getAllLogs(jwtToken,url,parseReadableToEpoch(startTime),parseReadableToEpoch(endTime));
-        String readableJson = parseJsonToReadable(json);
-        List<AuditCsvRow> list = parseJsonToObject(readableJson);
-        writeCsv(list);
-
+        getAllLogs(jwtToken,url,parseReadableToEpoch(startTime),parseReadableToEpoch(endTime));
     }
 
     static String getToken(String username, String password, String url) throws IOException, InterruptedException {
@@ -101,26 +100,34 @@ public class GetCsv {
                 .subSequence(10,accessToken.length() - 1);
     }
 
-    static String getAllLogs(String token, String baseUrl, long startTime, long endTime) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest
-                .newBuilder()
-                .GET()
-                .header("Authorization", "Bearer " + token)
-                .header("accept", "application/json")
-                .uri(URI.create(String.format(
-                        "%s/api/audit/logs?pageSize=10&page=0&startTime=%d&endTime=%d",
-                        baseUrl,
-                        startTime,
-                        endTime
-                )))
-                .build();
+    static void getAllLogs(String token, String baseUrl, long startTime, long endTime) throws IOException, InterruptedException, CsvRequiredFieldEmptyException, CsvDataTypeMismatchException {
+        boolean hasNext;
+        int page = 0;
+        do {
+            HttpRequest request = HttpRequest
+                    .newBuilder()
+                    .GET()
+                    .header("Authorization", "Bearer " + token)
+                    .header("accept", "application/json")
+                    .uri(URI.create(String.format(
+                            "%s/api/audit/logs?pageSize=100&page=%d&startTime=%d&endTime=%d",
+                            baseUrl,
+                            page,
+                            startTime,
+                            endTime
+                    )))
+                    .build();
 
-        HttpResponse<String> response = http
-                .send(request,HttpResponse
-                        .BodyHandlers
-                        .ofString());
+            HttpResponse<String> response = http
+                    .send(request, HttpResponse
+                            .BodyHandlers
+                            .ofString());
 
-        return response.body();
+            parseJsonToObject(response.body());
+            JsonNode root = mapper.readTree(response.body());
+            hasNext = root.get("hasNext").asBoolean();
+            page++;
+        }while(hasNext);
     }
 
     static String parseJsonToReadable(String raw) throws JsonProcessingException {
@@ -132,7 +139,7 @@ public class GetCsv {
                 .writeValueAsString(node);
     }
 
-    static List<AuditCsvRow> parseJsonToObject(String json) throws JsonProcessingException {
+    static void parseJsonToObject(String json) throws IOException, CsvRequiredFieldEmptyException, CsvDataTypeMismatchException {
         List<AuditCsvRow> itemList = new ArrayList<>();
         JsonNode root = mapper.readTree(json);
         JsonNode dataArray = root.get("data");
@@ -159,31 +166,38 @@ public class GetCsv {
                     .asText());
             itemList.add(obj);
         }
-        return itemList;
+        writeCsv(itemList);
     }
 
     static void writeCsv(List<AuditCsvRow> list) throws IOException, CsvRequiredFieldEmptyException, CsvDataTypeMismatchException {
-        Writer writer = Files.newBufferedWriter(Paths.get(path));
+        Path csvPath = path;
+        boolean writerHeader = Files.notExists(csvPath) || Files.size(csvPath) == 0;
+        try (Writer writer = Files.newBufferedWriter(
+                csvPath,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.APPEND)) {
+            if (writerHeader) {
+                writer.write("Timestamp,Entity Type,Entity Name,User,Type,Status\n");
+            }
 
-        ColumnPositionMappingStrategy<AuditCsvRow> strategy =
-                new ColumnPositionMappingStrategy<>();
-        strategy.setType(AuditCsvRow.class);
-        strategy.setColumnMapping(
-                "createdTime",
-                "entityType",
-                "entityName",
-                "userName",
-                "actionType",
-                "actionStatus"
-        );
-        writer.write("Timestamp,Entity Type,Entity Name,User,Type,Status\n");
-        StatefulBeanToCsv<AuditCsvRow> beanToCsv = new StatefulBeanToCsvBuilder<AuditCsvRow>(writer)
-                .withMappingStrategy(strategy)
-                .withSeparator(',')
-                .build();
+            ColumnPositionMappingStrategy<AuditCsvRow> strategy =
+                    new ColumnPositionMappingStrategy<>();
+            strategy.setType(AuditCsvRow.class);
+            strategy.setColumnMapping(
+                    "createdTime",
+                    "entityType",
+                    "entityName",
+                    "userName",
+                    "actionType",
+                    "actionStatus"
+            );
+            StatefulBeanToCsv<AuditCsvRow> beanToCsv = new StatefulBeanToCsvBuilder<AuditCsvRow>(writer)
+                    .withMappingStrategy(strategy)
+                    .withSeparator(',')
+                    .build();
 
-        beanToCsv.write(list);
-        writer.close();
+            beanToCsv.write(list);
+        }
     }
 
     static String parseEpochToReadable(long time){
@@ -212,5 +226,14 @@ public class GetCsv {
         }catch (DateTimeParseException e){
             return false;
         }
+    }
+
+    static Path createCsvPathForThisRun() {
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+
+        String timestamp = LocalDateTime.now().format(formatter);
+
+        return Paths.get(basePath + "/audit-logs-" + timestamp + ".csv");
     }
 }
