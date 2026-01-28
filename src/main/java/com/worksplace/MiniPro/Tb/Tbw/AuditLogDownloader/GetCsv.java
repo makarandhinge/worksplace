@@ -22,6 +22,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -30,33 +32,45 @@ public class GetCsv {
 
     static ObjectMapper mapper = new ObjectMapper();
     static HttpClient http = HttpClient.newHttpClient();
+    static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-uuuu HH:mm:ss")
+            .withResolverStyle(ResolverStyle.STRICT);
     static final String defaultUrl = "http://20.153.138.18:8080";
     static final String defaultUsername = "tenant@thingsboard.org";
     static final String defaultPassword = "tenant@metOSX";
+    static final String defaultStartTime = LocalDateTime.now()
+            .minusDays(7)
+            .format(formatter);
+    static final String defaultEndTime = LocalDateTime.now()
+            .format(formatter);
     static final String path = "/home/hingemakarand/audit.csv";
+
 
     public static void main(String[] args) throws IOException, InterruptedException, CsvRequiredFieldEmptyException, CsvDataTypeMismatchException {
         Scanner sc = new Scanner(System.in);
 
         System.out.printf("Enter the url (press enter for default url - %s) : ", defaultUrl);
-        String url = sc.nextLine();
+        String url = normalize(sc.nextLine(), defaultUrl);
         System.out.printf("Enter the username (press enter for default username - %s) : ", defaultUsername);
-        String username = sc.nextLine();
+        String username = normalize(sc.nextLine(), defaultUsername);
         System.out.printf("Enter the password (press enter for default password - %s) : ", defaultPassword);
-        String password = sc.nextLine();
-
-        if(url.isEmpty()){
-            url = defaultUrl;
+        String password = normalize(sc.nextLine(), defaultPassword);
+        System.out.print("Enter the start time (press enter for default start time - past 7 days [dd-MM-yyyy HH:mm:ss] : ");
+        String startTime;
+        String endTime;
+        while(true) {
+            startTime = normalize(sc.nextLine(), defaultStartTime);
+            if(isValidDateTime(startTime)) break;
+            System.out.println("Try again. Format: dd-MM-yyyy HH:mm:ss");
         }
-        if(username.isEmpty()){
-            username = defaultUsername;
-        }
-        if(password.isEmpty()){
-            password = defaultPassword;
+        System.out.print("Enter the end time (press enter for default end time - today ongoing [dd-MM-yyyy HH:mm:ss] : ");
+        while(true) {
+            endTime = normalize(sc.nextLine(), defaultEndTime);
+            if(isValidDateTime(endTime)) break;
+            System.out.println("Try again. Format: dd-MM-yyyy HH:mm:ss");
         }
 
         String jwtToken = getToken(username,password,url);
-        String json = getAllLogs(jwtToken,url);
+        String json = getAllLogs(jwtToken,url,parseReadableToEpoch(startTime),parseReadableToEpoch(endTime));
         String readableJson = parseJsonToReadable(json);
         List<AuditCsvRow> list = parseJsonToObject(readableJson);
         writeCsv(list);
@@ -87,13 +101,18 @@ public class GetCsv {
                 .subSequence(10,accessToken.length() - 1);
     }
 
-    static String getAllLogs(String token, String url) throws IOException, InterruptedException {
+    static String getAllLogs(String token, String baseUrl, long startTime, long endTime) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest
                 .newBuilder()
                 .GET()
                 .header("Authorization", "Bearer " + token)
                 .header("accept", "application/json")
-                .uri(URI.create(url + "/api/audit/logs?pageSize=10&page=0"))
+                .uri(URI.create(String.format(
+                        "%s/api/audit/logs?pageSize=10&page=0&startTime=%d&endTime=%d",
+                        baseUrl,
+                        startTime,
+                        endTime
+                )))
                 .build();
 
         HttpResponse<String> response = http
@@ -171,8 +190,27 @@ public class GetCsv {
         Instant instant = Instant.ofEpochMilli(time);
         LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
         return dateTime.format(formatter);
+    }
 
+    static long parseReadableToEpoch(String time){
+        LocalDateTime dateTime = LocalDateTime.parse(time,formatter);
+        return dateTime.atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli();
+    }
+
+    static String normalize(String input, String defaultValue){
+        input = input.trim();
+        return input.isEmpty() ? defaultValue : input;
+    }
+
+    static boolean isValidDateTime(String input){
+        try {
+            LocalDateTime.parse(input, formatter);
+            return true;
+        }catch (DateTimeParseException e){
+            return false;
+        }
     }
 }
