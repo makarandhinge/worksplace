@@ -26,9 +26,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class GetCsv {
 
@@ -71,9 +70,11 @@ public class GetCsv {
             if(isValidDateTime(endTime)) break;
             System.out.println("Try again. Format: dd-MM-yyyy HH:mm:ss");
         }
+        System.out.print("Enter the action type (press enter for nothing) [login,logout (separated by commas)] : ");
+        String actionTypeStr = sc.nextLine();
 
         String jwtToken = getToken(username,password,url);
-        getAllLogs(jwtToken,url,parseReadableToEpoch(startTime),parseReadableToEpoch(endTime));
+        getAllLogs(jwtToken,url,parseReadableToEpoch(startTime),parseReadableToEpoch(endTime), actionTypeStr);
     }
 
     static String getToken(String username, String password, String url) throws IOException, InterruptedException {
@@ -100,22 +101,29 @@ public class GetCsv {
                 .subSequence(10,accessToken.length() - 1);
     }
 
-    static void getAllLogs(String token, String baseUrl, long startTime, long endTime) throws IOException, InterruptedException, CsvRequiredFieldEmptyException, CsvDataTypeMismatchException {
+    static void getAllLogs(String token, String baseUrl, long startTime, long endTime, String actionTypestr) throws IOException, InterruptedException, CsvRequiredFieldEmptyException, CsvDataTypeMismatchException {
         boolean hasNext;
         int page = 0;
         do {
+            StringBuilder url = new StringBuilder(
+                    String.format(
+                            "%s/api/audit/logs?pageSize=100&page=%d&startTime=%d&endTime=%d",
+                            baseUrl, page, startTime, endTime
+                    )
+            );
+
+            if(actionTypestr != null && !actionTypestr.isBlank()){
+                url.append("&actionTypes=")
+                        .append(isValidActionType(actionTypestr));
+            }
+
+
             HttpRequest request = HttpRequest
                     .newBuilder()
                     .GET()
                     .header("Authorization", "Bearer " + token)
                     .header("accept", "application/json")
-                    .uri(URI.create(String.format(
-                            "%s/api/audit/logs?pageSize=100&page=%d&startTime=%d&endTime=%d",
-                            baseUrl,
-                            page,
-                            startTime,
-                            endTime
-                    )))
+                    .uri(URI.create(String.valueOf(url)))
                     .build();
 
             HttpResponse<String> response = http
@@ -237,16 +245,26 @@ public class GetCsv {
         return Paths.get(basePath + "/audit-logs-" + timestamp + ".csv");
     }
 
-    static void isValidActionType(String actionTypeStr){
-        String[] actionTypes = actionTypeStr.split(",");
+    static String isValidActionType(String actionTypeStr){
+        List<ActionType> validTypes = Arrays.stream(actionTypeStr.split(","))
+                .map(String::trim)
+                .map(String::toUpperCase)
+                .map(s -> {
+                    try{
+                        return ActionType.valueOf(s);
+                    }catch (Exception e){
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toList();
 
-        for (String type : actionTypes) {
-            String trimmed = type.trim();
-            try {
-                ActionType.valueOf(trimmed.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                System.out.println("Invalid action type: " + trimmed);
-            }
+        String raw = "";
+        if(!validTypes.isEmpty()){
+            raw = validTypes.stream()
+                    .map(Enum::name)
+                    .collect(Collectors.joining(","));
         }
+        return raw;
     }
 }
