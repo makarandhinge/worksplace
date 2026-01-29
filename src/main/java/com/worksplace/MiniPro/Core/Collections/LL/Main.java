@@ -1,5 +1,6 @@
 package com.worksplace.MiniPro.Core.Collections.LL;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
@@ -58,6 +59,69 @@ public class Main {
 //        it1.remove();
 //
 //        it2.next(); //exception occur
+
+//        LinkedList<String> list = new LinkedList<>();
+//        list.add("Java");
+//        list.add("C");
+//        list.add("Python");
+//        list.add("Go");
+//        list.add("Spring");
+
+//        Wrong way
+//        for (String s : list) {
+//            if (s.length() <= 3) {
+//                list.remove(s);   // ConcurrentModificationException
+//            }
+//        }
+
+//        Iterator<String> it = list.iterator();
+//        while (it.hasNext()) {
+//            if (it.next().length() <= 3) {
+//                it.remove();   // safe
+//            }
+//        }
+//
+//        System.out.println(list);
+
+//        LinkedList<String> list = new LinkedList<>();
+//        list.add("A");
+//        list.add("B");
+//        list.add("C");
+//        list.add("B");
+//
+//        ListIterator<String> it = list.listIterator();
+//        while (it.hasNext()) {
+//            if (it.next().equals("B")) {
+//                it.add("X");   // insert after B
+//            }
+//        }
+//
+//        System.out.println(list);
+
+//        System.out.println(list);
+//        ListIterator<String> it = list.listIterator();
+//        while (it.hasNext()) {
+//            if (it.next().equals("Java")) {
+//                it.set("JAVA");   // structure unchanged
+//            }
+//        }
+//        System.out.println(list);
+
+        LinkedList<Integer> list = new LinkedList<>();
+        list.add(1);
+        list.add(2);
+        list.add(3);
+        list.add(4);
+        list.add(5);
+        list.add(6);
+
+        ListIterator<Integer> it = list.listIterator();
+        while(it.hasNext()){
+            if(it.next()%2 != 0){
+                it.set(0);
+            }
+        }
+        System.out.println(list);
 
 
     }
