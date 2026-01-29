@@ -236,4 +236,17 @@ public class GetCsv {
 
         return Paths.get(basePath + "/audit-logs-" + timestamp + ".csv");
     }
+
+    static void isValidActionType(String actionTypeStr){
+        String[] actionTypes = actionTypeStr.split(",");
+
+        for (String type : actionTypes) {
+            String trimmed = type.trim();
+            try {
+                ActionType.valueOf(trimmed.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid action type: " + trimmed);
+            }
+        }
+    }
 }
