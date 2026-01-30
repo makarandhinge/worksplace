@@ -9,7 +9,7 @@ import com.opencsv.bean.StatefulBeanToCsv;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
 import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
-
+import com.worksplace.MiniPro.Tb.Tbw.AuditLogDownloader.Exception.UnauthorizedException;
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URI;
@@ -94,6 +94,9 @@ public class GetCsv {
 
         HttpResponse<String> response = http
                 .send(request,HttpResponse.BodyHandlers.ofString());
+        if(response.statusCode() == 401){
+            throw new UnauthorizedException("Unauthorized (401)");
+        }
         JsonNode jsonNode = mapper.readTree(response.body());
         return jsonNode.get("token").asText();
 
