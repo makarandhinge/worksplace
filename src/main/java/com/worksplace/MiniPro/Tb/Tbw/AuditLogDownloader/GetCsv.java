@@ -59,19 +59,29 @@ public class GetCsv {
         String username = normalize(sc.nextLine(), defaultUsername);
         System.out.printf("Enter the password (press enter for default password - %s) : ", defaultPassword);
         String password = normalize(sc.nextLine(), defaultPassword);
-        System.out.print("Enter the start time (press enter for default start time - past 7 days [dd-MM-yyyy HH:mm:ss] : ");
         String startTime;
         String endTime;
         while(true) {
+            System.out.print("Enter the start time (press enter for default start time - past 7 days [dd-MM-yyyy HH:mm:ss]): ");
             startTime = normalize(sc.nextLine(), defaultStartTime);
-            if(isValidDateTime(startTime)) break;
-            System.out.println("Try again. Format: dd-MM-yyyy HH:mm:ss");
-        }
-        System.out.print("Enter the end time (press enter for default end time - today ongoing [dd-MM-yyyy HH:mm:ss] : ");
-        while(true) {
+            if(!isValidDateTime(startTime)) {
+                System.out.println("Invalid start time. Try again. Format: dd-MM-yyyy HH:mm:ss");
+                continue;
+            }
+
+            System.out.print("Enter the end time (press enter for default end time - today ongoing [dd-MM-yyyy HH:mm:ss]): ");
             endTime = normalize(sc.nextLine(), defaultEndTime);
-            if(isValidDateTime(endTime)) break;
-            System.out.println("Try again. Format: dd-MM-yyyy HH:mm:ss");
+            if(!isValidDateTime(endTime)) {
+                System.out.println("Invalid end time. Try again. Format: dd-MM-yyyy HH:mm:ss");
+                continue;
+            }
+
+            if(!isValidRange(startTime, endTime)) {
+                System.out.println("Invalid date range. Start time must be before end time. Try again.");
+                continue;
+            }
+
+            break;
         }
         System.out.print("Enter the action type (press enter for nothing) [login,logout (separated by commas)] : ");
         String actionTypeStr = sc.nextLine();
@@ -300,5 +310,16 @@ public class GetCsv {
                     .collect(Collectors.joining(","));
         }
         return raw;
+    }
+
+    static boolean isValidRange(String start, String end){
+        try {
+            LocalDateTime startTime = LocalDateTime.parse(start, formatter);
+            LocalDateTime endTime = LocalDateTime.parse(end, formatter);
+            return endTime.isAfter(startTime);
+
+        } catch (DateTimeParseException e) {
+            return false;
+        }
     }
 }
