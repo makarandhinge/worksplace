@@ -144,8 +144,6 @@ public class GetCsv {
                 url.append("&actionTypes=")
                         .append(isValidActionType(actionTypestr));
             }
-
-
             HttpRequest request = HttpRequest
                     .newBuilder()
                     .GET()
@@ -194,27 +192,27 @@ public class GetCsv {
     static void parseJsonToObject(String json) throws IOException, CsvRequiredFieldEmptyException, CsvDataTypeMismatchException {
         List<AuditCsvRow> itemList = new ArrayList<>();
         JsonNode root = mapper.readTree(json);
-        JsonNode dataArray = root.get("data");
+        JsonNode dataArray = root.path("data");
         for(JsonNode item : dataArray){
             AuditCsvRow obj = new AuditCsvRow();
             obj.setCreatedTime(parseEpochToReadable(item
-                    .get("createdTime")
+                    .path("createdTime")
                     .asLong()));
             obj.setUserName(item
-                    .get("userName")
+                    .path("userName")
                     .asText());
             obj.setEntityType(item
-                    .get("entityId")
-                    .get("entityType")
+                    .path("entityId")
+                    .path("entityType")
                     .asText());
             obj.setEntityName(item
-                    .get("entityName")
+                    .path("entityname")
                     .asText());
             obj.setActionType(item
-                    .get("actionType")
+                    .path("actionType")
                     .asText());
             obj.setActionStatus(item
-                    .get("actionStatus")
+                    .path("actionStatus")
                     .asText());
             itemList.add(obj);
         }
