@@ -12,10 +12,12 @@ import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
 import com.worksplace.MiniPro.Tb.Tbw.AuditLogDownloader.Exception.UnauthorizedException;
 import java.io.IOException;
 import java.io.Writer;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.channels.ClosedChannelException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -91,9 +93,13 @@ public class GetCsv {
                 .uri(URI.create(url + "/api/auth/login"))
                 .header("Content-Type","application/json")
                 .build();
-
-        HttpResponse<String> response = http
-                .send(request,HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response;
+        try {
+            response = http
+                    .send(request, HttpResponse.BodyHandlers.ofString());
+        }catch(ConnectException | ClosedChannelException e){
+            throw new RuntimeException("Server unreachable");
+        }
         if(response.statusCode() == 401){
             throw new UnauthorizedException("Unauthorized (401)");
         }
