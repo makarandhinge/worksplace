@@ -37,7 +37,7 @@ public class GetCsv {
             .withResolverStyle(ResolverStyle.STRICT);
     static final String defaultUrl = "http://20.153.138.18:8080";
     static final String defaultUsername = "tenant@thingsboard.org";
-    static final String defaultPassword = "tenant@metOSX";
+    static final String defaultPassword = "tenant";
     static final String defaultStartTime = LocalDateTime.now()
             .minusDays(7)
             .format(formatter);
