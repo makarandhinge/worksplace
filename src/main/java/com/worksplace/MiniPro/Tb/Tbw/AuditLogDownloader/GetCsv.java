@@ -94,11 +94,9 @@ public class GetCsv {
 
         HttpResponse<String> response = http
                 .send(request,HttpResponse.BodyHandlers.ofString());
-        String accessToken = response
-                .body()
-                .split(",")[0];
-        return (String) accessToken
-                .subSequence(10,accessToken.length() - 1);
+        JsonNode jsonNode = mapper.readTree(response.body());
+        return jsonNode.get("token").asText();
+
     }
 
     static void getAllLogs(String token, String baseUrl, long startTime, long endTime, String actionTypestr) throws IOException, InterruptedException, CsvRequiredFieldEmptyException, CsvDataTypeMismatchException {
