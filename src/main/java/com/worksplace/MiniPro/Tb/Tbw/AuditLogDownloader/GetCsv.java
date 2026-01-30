@@ -13,6 +13,7 @@ import com.worksplace.MiniPro.Tb.Tbw.AuditLogDownloader.Exception.UnauthorizedEx
 import java.io.IOException;
 import java.io.Writer;
 import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -97,12 +98,22 @@ public class GetCsv {
         try {
             response = http
                     .send(request, HttpResponse.BodyHandlers.ofString());
+
+            int status = response.statusCode();
+            if(status == 401){
+                throw new UnauthorizedException("Unauthorized (401)");
+            }
+            if (status >= 500) {
+                throw new RuntimeException(
+                        "Service is currently unavailable. Please try again later."
+                );
+            }
         }catch(ConnectException | ClosedChannelException e){
             throw new RuntimeException("Server unreachable");
+        }catch (SocketTimeoutException e){
+            throw new RuntimeException("The service is taking too long to respond.");
         }
-        if(response.statusCode() == 401){
-            throw new UnauthorizedException("Unauthorized (401)");
-        }
+
         JsonNode jsonNode = mapper.readTree(response.body());
         return jsonNode.get("token").asText();
 
@@ -133,10 +144,26 @@ public class GetCsv {
                     .uri(URI.create(String.valueOf(url)))
                     .build();
 
-            HttpResponse<String> response = http
-                    .send(request, HttpResponse
-                            .BodyHandlers
-                            .ofString());
+            HttpResponse<String> response;
+            try {
+                response = http
+                        .send(request, HttpResponse
+                                .BodyHandlers
+                                .ofString());
+                int status = response.statusCode();
+                if(status == 401){
+                    throw new UnauthorizedException("Unauthorized (401)");
+                }
+                if (status >= 500) {
+                    throw new RuntimeException(
+                            "Service is currently unavailable. Please try again later."
+                    );
+                }
+            }catch(ConnectException | ClosedChannelException e){
+                throw new RuntimeException("Server unreachable");
+            }catch (SocketTimeoutException e){
+                throw new RuntimeException("The service is taking too long to respond.");
+            }
 
             parseJsonToObject(response.body());
             JsonNode root = mapper.readTree(response.body());
